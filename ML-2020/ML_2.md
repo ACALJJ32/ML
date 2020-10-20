@@ -18,8 +18,54 @@ $$\nabla{L(\theta)}=\begin{bmatrix}
 &ensp;&ensp;&ensp;&ensp;计算好每个参数的偏导数后，可以更新神经网络中的参数：  
 &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;$\theta^{1} =\theta^{0} - {\eta} {\nabla{L(\theta^{0})}}$
 &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;$\theta^{2} =\theta^{1} - {\eta} {\nabla{L(\theta^{1})}}$  
+&ensp;&ensp;&ensp;&ensp;参考以下的神经网络模型，  
+![avatar](E:/ML\ML-2020\images\QQ截图20201020160254.png)  
+&ensp;&ensp;&ensp;&ensp;令$C$为损失函数，根据求导的链式法则：  
+$$\frac{\partial{C}}{\partial{w}}=\frac{\partial{z}}{\partial{w}} \frac{\partial{C}}{\partial{z}}$$  
+其中，$\frac{\partial{z}}{\partial{w}}$是用来计算模型的前向传播，$\frac{\partial{C}}{\partial{z}}$用来计算模型的后向传播。观察以上模型可以发现：  
+$$\frac{\partial{C}}{\partial{z}} = \frac{\partial{a}}{\partial{z}} \frac{\partial{C}}{\partial{a}} = {\sigma{'}(z)}\frac{\partial{C}}{\partial{a}}$$ 
+令$w_{3}=\frac{\partial{z{'}}}{\partial{a}}$，$w_{4}=\frac{\partial{z{''}}}{\partial{a}}$，可以得到：
+$$\frac{\partial{C}}{\partial{z}} = \sigma{'}(w_{3}\frac{\partial{C}}{\partial{z{'}}} + w_{4}\frac{\partial{C}}{\partial{z{''}}})$$  
+根据以上计算实例，可以明白BP神经网络的反向传播原理。
+# 2. CNN(Convolutional Neural Network) 
+* 为什么使用CNN模型  
+&ensp;&ensp;&ensp;&ensp;CNN模型通常用来处理图像分类问题，那么对于一个多分类的问题，在原理是我们是可以使用传统的机器学习去完成的，比如多层感知机模型或者k-NN模型等。之所以使用CNN模型，是因为相比较于传统的机器学习模型，CNN模型不需要我们做特征工程。传统的机器学习模型需要对处理的对象做特征工程，当数据的维度非常大时，特征工程的难度是特性高的。所以，使用CNN模型，可以直接将数据输入进去，模型可以自己去学习判断哪些是好的特征。
+* CNN模型的流程  
+![avatar](E:/ML\ML-2020\images\QQ截图20201020163408.png) 
+&ensp;&ensp;&ensp;&ensp;这是一个CNN模型基本的计算流程。首先，输入一张图片，模型对图片做卷积运算(Convolution)，然后再进行池化操作(Max Pooling)，将这两步重复多次后，可以得到这张图片的特征向量并输入到搭建好的神经网络模型中。
+&ensp;&ensp;&ensp;&ensp; . 卷积运算(Convolution)  
+&ensp;&ensp;&ensp;&ensp; 在卷积运算中，我们假设$I$是一张二维图像，同时我们有一个二维的核$K$，得到如下的映射：
+$$S(i,j)=(I*K)(i,j)={\sum_{m}}{\sum_{n}}I(m,n)K(i-m,j-n)$$  
+&ensp;&ensp;&ensp;&ensp; 举个例子，假设我们有一张4*4的图片，以及卷积核1、卷积核2，通过以上定义的卷积运算，可以得到两张特征图(feature map)
+![avatar](E:/ML\ML-2020\images\QQ截图20201020165026.png) 
+&ensp;&ensp;&ensp;&ensp; . 池化层(Max Pooling)  
+&ensp;&ensp;&ensp;&ensp; 池化层的主要目的是通过降采样的方式，在不影响图像质量的情况下，压缩图片，减少参数。例如：  
+![Alt text](https://images2017.cnblogs.com/blog/853467/201711/853467-20171104142056685-2048616836.png) 
+&ensp;&ensp;&ensp;&ensp;池化层的意义就是使用某一位置相邻的总体统计特征来代替网络在该位置的输出，或者说我们在提取特征时，只关系特征本身，而不是特征出现的位置。常用的池化函数有：相邻矩形区域平均值，$L^{2}$范数以及基于距中心像素距离的加权平均。
+&ensp;&ensp;&ensp;&ensp; . Zero Padding和Flatten  
+&ensp;&ensp;&ensp;&ensp; 因为图片在经过卷积运算和池化层后，会变得越来越小，所以通过补零(Zero Padding)，可以使得输出的图像和之前相比大小不变。  
+&ensp;&ensp;&ensp;&ensp; 为了将得到的特征图输入到搭建好的神经网络模型中，需要将特征图平铺开来(Flatten)，操作如下:
+![Alt text](https://images2017.cnblogs.com/blog/853467/201711/853467-20171104142200763-1912037434.png)   
+# 3.RNN(Recurrent Neural Network)  
+&ensp;&ensp;&ensp;&ensp;和能够有效处理空间数据的CNN模型不同，RNN是一种能够有效处理时序信息的模型，经常应用于语言模型、文本分析、机器翻译等。  
+* 语言模型  
+&ensp;&ensp;&ensp;&ensp; 假设文本$T$中的词汇以此看作$w_{1},w_{2},\dots,w_{T}$，该语言模型序列的概率：
+$$P(w_{1},w_{2},\dots,w_{T}) = \prod_{t=1}^{T}P(w_{t}|w_{1},\dots,w_{t-1})$$  
+例如，一个含有4个词的文本序列的概率:
+$$P(w_{1},w_{2},w_{3},w_{4}) = P(w_{1})P(w_{2}|w_{1})P(w_{3}|w_{1},w_{2})P(w_{4}|w_{1},w_{2},w_{3})$$  
+* Word Embedding 
+&ensp;&ensp;&ensp;&ensp; Word Embedding就是通过一种方法，让机器取阅读大量的文章，可以自动将一些语义相近的词汇映射到相近的高维空间去。
+&ensp;&ensp;&ensp;&ensp; 首先对词语进行1-of-N Encoding的方法进行描述，对每个词汇建立一个$vector$，为了和一般的方法区分开来(1-of-N Encoding，clustering)，可以设计一个神经网络模型，它要做的就是根据当前的word$w_{i−1}$，来预测下一个可能出现的word$w_{i}$是什么。假设我们使用1-of-N encoding把$w_{i−1}$表示成feature vector，它作为neural network的input，output的维数和input相等，只不过每一维都是小数，代表在1-of-N Encoding中该维为1其余维为0所对应的word会是下一个word$w_{i}$的概率。
+&ensp;&ensp;&ensp;&ensp; 假如将第一个隐藏层的的输入$z_{1},z_{2},\dots,z_{m}$拿出来，这个向量可以作为对应单词的另一种表示形式，将这个向量作在图上，可以发现相近的词向量具有相近的词性。  
+![Alt text](https://nekomoon404.github.io/2020/07/26/ML%E7%AC%94%E8%AE%B0%EF%BC%8812%EF%BC%89Unsupervised-Learning-Word-Embedding/QQ%E5%9B%BE%E7%89%8720200726112245.png)  
+* 共享权重  
+&ensp;&ensp;&ensp;&ensp; 因为仅仅只靠当前词汇去预测下一个词汇，那么模型的预测能力会很弱，我们可以通过共享权重的方法，通过多个词汇去预测下一个词汇。
+![Alt text](https://nekomoon404.github.io/2020/07/26/ML%E7%AC%94%E8%AE%B0%EF%BC%8812%EF%BC%89Unsupervised-Learning-Word-Embedding/QQ%E5%9B%BE%E7%89%8720200726160338.png)  
+在具体操作时，可以通过如下运算，使得两个不同的词共享权重：
+$$w_{i} = w_{i} - {\eta}{\frac{\partial{C}}{\partial{w_{i}}}}- {\eta}{\frac{\partial{C}}{\partial{w_{i}}}}$$  
+$$w_{j} = w_{j} - {\eta}{\frac{\partial{C}}{\partial{w_{i}}}}- {\eta}{\frac{\partial{C}}{\partial{w_{i}}}}$$  
+此时就可以保证$w_{i}$和$w_{j}$相等了。
+# 4.LSTM(Long Short-Term Memory)  
+&ensp;&ensp;&ensp;&ensp; LSTM是一长短期神经网络算法，它具有记忆和遗忘功能，比如凭借临时内存，记忆一句话中较长一段时间前出现的词汇，并通过此预测下一个词出现的概率。下面给出一个典型的计算单元：  
+![avatar](E:/ML\ML-2020\images\QQ截图20201020204854.png) 
 
-# 2. CNN  
-$$x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}$$  
-$\sum_{i=0}^N\int_{a}^{b}g(t,i)\text{d}t$  
-$\sum_{i=0}^N\int_{a}^{b}g(t,i)\text{d}t$
