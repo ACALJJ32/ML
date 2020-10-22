@@ -67,5 +67,114 @@ $$w_{j} = w_{j} - {\eta}{\frac{\partial{C}}{\partial{w_{i}}}}- {\eta}{\frac{\par
 此时就可以保证$w_{i}$和$w_{j}$相等了。
 # 4.LSTM(Long Short-Term Memory)  
 &ensp;&ensp;&ensp;&ensp; LSTM是一长短期神经网络算法，它具有记忆和遗忘功能，比如凭借临时内存，记忆一句话中较长一段时间前出现的词汇，并通过此预测下一个词出现的概率。下面给出一个典型的计算单元：  
-![avatar](E:/ML\ML-2020\images\QQ截图20201020204854.png) 
+![avatar](E:/ML\ML-2020\images\QQ截图20201020204854.png)  
+![avatar](E:/ML\ML-2020\images\QQ截图20201021143616.png)
+&ensp;&ensp;&ensp;&ensp; 假设此时我们读取到的词为$X_{i}$，这个词对应的$vector$是$Z_{i}$，将这个词向量分别从$z,z_{i},z_{0},z_{f}$输入，并且假设其中使用的激活函数都是$sigmoid$激活函数。$z_{f}$控制模型是否将该模型记忆到内存中，$z_{0}$决定是否将计算的结果输出，作为下一个模型的输入。
+# 5.实验(CNN)  
+* 实验数据  
+&ensp;&ensp;&ensp;&ensp;实验数据是来源于(https://www.kaggle.com/c/digit-recognizer/data)的从零到九的手绘数字的灰度图像。每个图像的高度为28像素，宽度为28像素，总计784像素。每个像素都有一个与之关联的像素值，表示该像素的亮度或暗度，数字越高表示像素越暗。此像素值是0到255之间的整数(含)训练数据集（train.csv）有785列。第一列称为“标签”，是用户绘制的数字。其余列包含关联图像的像素值。 
+* 模型搭建 
+&ensp;&ensp;&ensp;&ensp; 首先读取数据，因为题目中明确说明没有数据的缺失，所以不再做任何预处理。读取数据后将数据的20%留作验证集，80%作为训练集。  
+```python
+data = pd.read_csv('../input/digit-recognizer/train.csv')
+test = pd.read_csv('../input/digit-recognizer/test.csv')
+train, valid = train_test_split(data, stratify=data.label, test_size=0.2)
+```  
+&ensp;&ensp;&ensp;&ensp; 导入好相应模块后，参考李宏毅老师搭建的神经网络模型，首先对原图像做卷积运算，并对每一批数据进行标准化处理，每次处理后都进行池化，最后得到神经网络的输入层有512个特征。  
+```python
+nn.Conv2d(1, 64, 3, 1, 1),  # [32, 28, 28]
+            nn.BatchNorm2d(64),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2, 0),      # [64, 14, 14]
 
+            nn.Conv2d(64, 128, 3, 1, 1), # [128, 14, 14]
+            nn.BatchNorm2d(128),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2, 0),      # [128, 7, 7]
+
+            nn.Conv2d(128, 256, 3, 1, 1), # [256, 3, 3]
+            nn.BatchNorm2d(256),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2, 0),      # [256, 1, 1]
+
+            nn.Conv2d(256, 512, 3, 1, 1), # [512, 1, 1]
+            nn.BatchNorm2d(512),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2, 0),       # [512, 8, 8]
+```  
+&ensp;&ensp;&ensp;&ensp; 为了防止模型过拟合，再将特征输入全连接层时，采用$p=0.5$的$dropout$，采用$LeRu()$作为模型的激活函数。
+```python
+            nn.Dropout(p = 0.5),
+            nn.Linear(512, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(inplace=True),
+            
+            nn.Dropout(p = 0.5),
+            nn.Linear(512, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(inplace=True),
+            
+            nn.Dropout(p = 0.5),
+            nn.Linear(512, 10),
+```    
+&ensp;&ensp;&ensp;&ensp;接下来对模型进行训练，模型的学习率采用$Adam$，损失函数定义为交叉熵损失函数。事实上，对于分类问题，一般习惯将交叉熵作为损失函数。  
+```python
+cnn = CNN().to(device)
+# 训练
+optimizer = torch.optim.Adam(cnn.parameters(), lr=LR)
+loss_func = nn.CrossEntropyLoss()
+
+for epoch in range(EPOCH):
+    for step, (x, y) in enumerate(train_dataloader):
+        b_x = x.to(device)
+        b_y = y.to(device)
+        output = cnn(b_x)
+        print
+        loss = loss_func(output, b_y)
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        if step % 200 == 0:
+            print('epoch:[{}/{}], loss:{:.4f}'.format(epoch, EPOCH, loss))
+            
+    cnn.eval()    #将模型的参数固定
+    with torch.no_grad():
+        total = 0
+        cor = 0
+        for x, y in valid_dataloader:
+            x = x.to(device)
+            y = y.to(device)
+            out = cnn(x)
+            pred = torch.max(out, 1)[1]
+            total += len(y)
+            cor += (y == pred).sum().item()
+    print('acc:{:.4f}'.format(cor/total))
+```    
+&ensp;&ensp;&ensp;&ensp;将训练好的数据再测试集上进行测试，保存结果为csv文件并提交，得分的结果和损失曲线如下：  
+![avatar](E:/ML\ML-2020\images\QQ截图20201022214115.png)
+![avatar](E:/ML\ML-2020\images\result1.jpg)  
+观察可以发现，虽然模型得到了较好的结果，模型计算的损失值在开始也很快地下降，但是在后面的迭代中，$loss$值一值有较大的波动，所以考虑减少卷积、池化的次数，观察是否可以改善模型。  
+&ensp;&ensp;&ensp;&ensp;  重新搭建如下的神经网络模型：  
+```python
+            nn.Conv2d(1,32,3,1,1),# (32, 28, 28)
+            nn.BatchNorm2d(32),
+            nn.ReLU(inplace=True),
+            
+            nn.Conv2d(32, 32, 3, 1, 1), # (32, 28, 28)
+            nn.BatchNorm2d(32),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2), # 池化 (32, 14, 14)
+            
+            nn.Conv2d(32, 64, 3, 1, 1),# (64, 14, 14)
+            nn.BatchNorm2d(64),
+            nn.ReLU(inplace=True),
+            
+            nn.Conv2d(64, 64, 3, 1, 1),# (64, 14, 14)
+            nn.BatchNorm2d(64),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),# (64, 7, 7)
+```  
+&ensp;&ensp;&ensp;&ensp;得到的实验结果如下：  
+![Alt text](https://app.yinxiang.com/shard/s29/res/77da47b8-b91b-45a8-beb8-721db8918780/result1%20%281%29.jpg)
+![Alt text](https://app.yinxiang.com/shard/s29/res/77da47b8-b91b-45a8-beb8-721db8918780/result1%20%281%29.jpg)  
