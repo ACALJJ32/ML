@@ -33,7 +33,8 @@ class LSTM_Net(nn.Module):
                                          nn.Linear(hidden_dim, 1),
                                          nn.Sigmoid() )
 ```
-&emsp;&emsp;关于最后的DNN，在全连接层先调用dropout()函数，防止模型过拟合；然后调用linear函数，输入为hidden_dim，也就是feature的维度。
+&emsp;&emsp;关于最后的DNN，在全连接层先调用dropout()函数，防止模型过拟合；然后调用linear函数，输入为hidden_dim，也就是feature的维度。最后对模型进行训练，得到的模型在验证集上的准确率有80.339%。
+![avatar](E:/ML/ML-2020/images/第三次汇报/3.png)  
 # 2.Explainable/Interpretable ML  
 ## * why Explainable/Interpretable ML  
 &emsp;&emsp;深度学习中的模型对我们来讲，一般都是黑箱模型，大多时候我们并不知道它为什么会得到这样的结论，所以需要设计这样的ML模型，使得它能够告诉我们真的有学到东西。线性模型是可解释的，所以我们可以通过线性模型，尝试取解释神经网络模型。  
@@ -70,5 +71,22 @@ $$x^{*} = arg \ min \ L(x')$$
 &emsp;&emsp;&emsp;&emsp;$For \ all \ x \ fulfill \ d(x^{0},d^{1})<\epsilon$  
 &emsp;&emsp;&emsp;&emsp;$return \ the \ one \ closest \ to \ x^{t}$
 ## * Attack Approaches  
+&emsp;&emsp;要设计出能够攻击深度学习模型的方法，主要是针对两个方面进行思考:一方面是考虑设计不同优化参数的方法，去最小化$min\ L(x')$的；另一方面是去考虑设计不同的限制方法。下面给出一种具体的攻击方法。  
+* Fast Gradient Sign Method (FGSM)
+$$x^{*}\leftarrow{x^{0}} - \epsilon{\Delta{x}}$$  
+$$\Delta{x} = \begin{Bmatrix} {sign(\partial{L}/{\partial{x_{1}}})} \\  {sign(\partial{L}/{\partial{x_{2}}})} \\ {sign(\partial{L}/{\partial{x_{3}}})} \\ {\vdots} \end{Bmatrix}$$  
+其中，$\Delta{x}$只有$1$或$-1$. 假设原来的算法找到的梯度方向为$gradient$，那么需要更新的梯度方向是$-gradient$，并且让学习率特别大，最后更新的参数落在限制范围外即可。  
+![avatar](E:/ML/ML-2020/images/第三次汇报/4.png)  
+如上图所示，我们计算得到了$gradient$，当前的学习率为$\epsilon$，那么我们将梯度取反，然后给一个非常大的学习率，那么就会得到$x^{1}$，又因为$x^{1}$是不满足限制条件的，所以$def(x^{t})$会自动让参数落在$x^{*}$。
+## * Defense  
+*  Passive defense：以图片分类为例，被动的防御模式就是模型出错时，尽可能得找到出错的数据，不去修改自己的模型。如果是非常特殊的数据，一般是可以检查出来的。  
+*  Proactive defense：通过训练一个模型，使得它足够强大，可以自己找出漏洞，让模型自己尽可能去抵御。  
+&emsp;&emsp;假设有一组训练数据:$\{ {(x_{1},\hat{y}_{1}), (x_{2},\hat{y}_{2}),\ {\dots}\ ,(x_{n},\hat{y}_{n})} \}$，然后使用$X$去训练你的模型。  
+$For {\ } t=1{\ }to{\ }T:$
+&emsp;&emsp;$For {\ } n=1{\ }to{\ }N:$  
+&emsp;&emsp;&emsp;&emsp;$Find{\ }adversarial{\ }input{\ }{\widetilde{x}_{n}} {\ } given {\ }by{\ }an{\ }attack{\ }algorithm.$  
+$We{\ }have{\ }new{\ }training{\ }data{\ }$: 
+$$X'=\{(\widetilde{x}_{1},\hat{y}_{1}),((\widetilde{x}_{2},\hat{y}_{2}),{\ }{\dots}{\ },((\widetilde{x}_{n},\hat{y}_{n})\}$$  
+$Using{\ }both{\ }X'{\ }to{\ }update{\ }your{\ }model.$  
 
 
