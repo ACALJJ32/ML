@@ -60,6 +60,7 @@ model = CatBoostClassifier(
     learning_rate=0.1,
     loss_function='Logloss'
     )
+    
 for train, valid in kfold.split(train_x, train_y):
     X_train, Y_train = train_x[train], train_y[train]
     X_valid, Y_valid = train_x[valid], train_y[valid]
